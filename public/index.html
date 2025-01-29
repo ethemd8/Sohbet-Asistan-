@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sohbet Asistanı</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background-color: #1e1e1e;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .chat-container {
+            flex-grow: 1;
+            background-color: #1e262d;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .message-history {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 90%;
+            margin: 0 auto;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            word-wrap: break-word;
+            max-width: 75%;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #3b5360;
+            color: white;
+        }
+
+        .bot-response {
+            align-self: flex-start;
+            background-color: #617d95;
+            color: white;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            background-color: #cae6fe;
+            border-top: 1px solid #ddd;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .input-group input {
+            flex-grow: 1;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            transition: box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #007BFF;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        .input-group button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .input-group button:hover {
+            background-color: #0056b3;
+        }
+
+        .input-group .clear-button {
+            background-color: #FF4D4D;
+        }
+
+        .input-group .clear-button:hover {
+            background-color: #CC0000;
+        }
+
+        .loading {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 2s linear infinite;
+            margin-left: 5px;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+         .message-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-content {
+           margin-bottom: 5px; /* Add some spacing between the text and time */
+        }
+         .message-time {
+            font-size: 0.8em;
+            color: #aaa; /* Time message color */
+            align-self: flex-end;
+        }
+       .input-group button[disabled] {
+            background-color: #aaa; /* Red background when disabled */
+             color:white;
+             cursor:not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo">Sohbet Asistanı</div>
+    </div>
+
+    <div class="chat-container">
+        <div class="message-history" id="messageHistory"></div>
+    </div>
+
+    <div class="input-group">
+        <input id="userMessage" type="text" placeholder="Mesajınızı yazın..." />
+         <div id="loadingIndicator" class="loading"></div>
+        <button id="sendMessage">Gönder</button>
+        <button id="clearMessage" class="clear-button">Temizle</button>
+    </div>
+
+    <script>
+         const messageHistory = document.getElementById("messageHistory");
+         const userMessageInput = document.getElementById("userMessage");
+         const sendMessageButton = document.getElementById("sendMessage");
+         const clearMessageButton = document.getElementById("clearMessage");
+         const loadingIndicator = document.getElementById("loadingIndicator");
+         let eventSource = null;
+
+        // Mesaj Gönderme
+        sendMessageButton.addEventListener("click", sendMessage);
+          userMessageInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter" && !sendMessageButton.disabled) sendMessage();
+         });
+
+        // Mesaj Temizleme
+       clearMessageButton.addEventListener("click", clearOrStop);
+
+
+        function clearOrStop() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+                clearMessageButton.textContent = "Temizle";
+                 sendMessageButton.disabled = false; // Enable send button
+                 loadingIndicator.style.display = "none"; // Hide loading
+            } else {
+                userMessageInput.value = "";
+            }
+        }
+
+       function sendMessage() {
+             const message = userMessageInput.value.trim();
+             if (!message) return alert("Lütfen bir mesaj girin!");
+
+            appendMessage(message, "user-message");
+             userMessageInput.value = "";
+              sendMessageButton.disabled = true;
+            loadingIndicator.style.display = "inline-block";
+            clearMessageButton.textContent = "Durdur";
+
+            try {
+                eventSource = new EventSource(`/api/chat?message=${encodeURIComponent(message)}`);
+                 let botResponse = "";
+
+                  const botResponseDiv = document.createElement("div");
+                botResponseDiv.className = "message bot-response";
+                 const messageContainer = document.createElement("div");
+                messageContainer.className="message-container";
+                 botResponseDiv.appendChild(messageContainer)
+                messageHistory.appendChild(botResponseDiv);
+
+
+
+                eventSource.onmessage = (event) => {
+                    if (event.data === "[DONE]") {
+                        eventSource.close();
+                         eventSource = null;
+                      sendMessageButton.disabled = false;
+                       loadingIndicator.style.display = "none";
+                        clearMessageButton.textContent = "Temizle";
+                        return;
+                    }
+                     try {
+                        const data = JSON.parse(event.data);
+                        if (data.text) {
+                           botResponse += data.text;
+                              messageContainer.innerHTML = `
+                              <div class="message-content">${botResponse}</div>
+                             <div class="message-time">${data.timestamp}</div>
+                              `;
+                           scrollToBottom();
+                        }
+                    } catch (error) {
+                        console.error("Mesaj işleme hatası:", error);
+                    }
+                };
+                eventSource.onerror = () => {
+                      console.error("EventSource bağlantı hatası.");
+                    eventSource.close();
+                     eventSource = null;
+                    sendMessageButton.disabled = false;
+                    loadingIndicator.style.display = "none";
+                    clearMessageButton.textContent = "Temizle";
+                };
+            } catch (error) {
+                console.error("Hata:", error);
+               sendMessageButton.disabled = false;
+                loadingIndicator.style.display = "none";
+                 clearMessageButton.textContent = "Temizle";
+            }
+        }
+
+
+         function appendMessage(message, className) {
+              const messageDiv = document.createElement("div");
+              messageDiv.className = `message ${className}`;
+
+            const timestamp = new Date().toLocaleTimeString();
+              messageDiv.innerHTML = `
+                 <div class="message-container">
+                    <div class="message-content">${message}</div>
+                    <div class="message-time">${timestamp}</div>
+                  </div>
+            `;
+              messageHistory.appendChild(messageDiv);
+              scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            messageHistory.scrollTop = messageHistory.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>
