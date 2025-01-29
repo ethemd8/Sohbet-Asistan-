@@ -1,3 +1,4 @@
+
 # Sohbet-Asistanı
 Bu proje, kullanıcıların metinler içerisinden hızlı ve etkili bilgiye erişmesini sağlayan bir sohbet asistanı uygulamasıdır. Kullanıcılar, mesajlarını girip "Gönder" butonuna basarak veya "Enter" tuşuna basarak hızlı bir şekilde yanıt alabilirler. Uygulama, Google Gemini API'siyle entegre edilmiş olup, metin akışı (streaming) şeklinde yanıtlar sunar. Gerçek zamanlı mesajlaşma deneyimi sağlar.
 
@@ -40,5 +41,6 @@ Kullanım
 Kullanıcılar mesajlarını giriş kutusuna yazıp "Gönder" butonuna tıklayarak sohbeti başlatabilir.
 Asistanın yanıtları gerçek zamanlı olarak sohbet penceresinde gösterilecektir.
 Kullanıcılar, sohbeti temizleyebilir ve yeni bir mesaj gönderebilirler.
+![image](https://github.com/user-attachments/assets/7211711c-2926-4b7d-9edd-5504334c4721)
 Katkıda Bulunma
 Bu projeye katkıda bulunmak isterseniz, pull request (PR) gönderebilir veya issues (hata raporları ve öneriler) oluşturabilirsiniz.
